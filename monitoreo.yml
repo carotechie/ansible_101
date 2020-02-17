@@ -1,0 +1,41 @@
+---
+- hosts: localhost
+  vars:
+    env: DEV
+    instance: "1"
+  gather_facts: yes
+   
+  tasks:
+    # Load in all devbox URL info as vars from the yml file on the box:
+    - name: Fetch yml file from box with
+      fetch:
+        src: /etc/devbox_variables.yml
+        dest: /tmp
+        fail_on_missing: yes
+      become: yes
+
+    - include_vars: /tmp/{{ dev_instance_ip }}/etc/devbox_variables.yml
+
+    - name: debug this
+      debug: var=sipfrontend_url
+
+    - name: Check that SIP frontend is up
+      uri:
+        url: 'https://sip-{{ owner }}.dev.pfops.com/cas/login?service=https%3a%2f%2fsip-{{ owner }}.dev.pfops.com%2f'
+        validate_certs: no
+
+    - name: Check that Movil frontend is up
+      uri:
+        url: 'https://movil-{{ owner }}.dev.pfops.com/#/'
+        validate_certs: no
+
+    - name: Check that Zeus frontend is up
+      uri:
+        url: 'https://zeus-{{ owner }}.dev.pfops.com/ng/#'
+        validate_certs: no
+
+# Finally, confirm Jenkins is up on the box
+    - name: Check that Jenkins is up
+      uri:
+        url: 'http://{{ dev_instance_ip }}:8080/'
+        validate_certs: no
