@@ -1,0 +1,65 @@
+- name: "stop-servers | find our boxes that need to be stopped"
+  hosts: localhost
+  gather_facts: no
+  vars:
+    fb_filter:
+      tag:Environment: "DEV"
+      instance-state-name: "running"
+    cali_hosts: []
+    or_hosts: []
+  tasks:
+    - name: "retrieve featurebox information for west-1"
+      ec2_instance_facts:
+        filters: "{{ fb_filter }}"
+        region: "us-west-1"
+      register: cali_boxes
+
+    - name: "retrieve featurebox information for west-2"
+      ec2_instance_facts:
+        filters: "{{ fb_filter }}"
+        region: "us-west-2"
+      register: or_boxes
+
+    - name: "Create list of west-1 instance ids to stop"
+      set_fact:
+        cali_hosts: "{{ cali_hosts + [item.instance_id] }}"
+      loop: "{{ cali_boxes.instances }}"
+
+    - name: "Create list of west-2 instance ids to stop"
+      set_fact:
+        or_hosts: "{{ or_hosts + [item.instance_id] }}"
+      loop: "{{ or_boxes.instances }}"
+
+    - name: "List west-1 instance ids"
+      debug:
+        var: cali_hosts
+
+    - name: "List west-2 instance ids"
+      debug:
+        var: or_hosts
+
+    - name: "stop-boxes | Stop west-1 instances"
+      ec2:
+        region: 'us-west-1'
+        state: stopped
+        instance_ids: "{{ cali_hosts }}"
+      delegate_to: localhost
+      register: result
+      retries: "{{ tasks_retry_max }}"
+      delay: "{{ tasks_retry_delay }}"
+      until: result | success
+      tags:
+        - skip_ansible_lint
+
+    - name: "stop-boxes | Stop west-2 instances"
+      ec2:
+        region: 'us-west-2'
+        state: stopped
+        instance_ids: "{{ or_hosts }}"
+      delegate_to: localhost
+      register: result
+      retries: "{{ tasks_retry_max }}"
+      delay: "{{ tasks_retry_delay }}"
+      until: result | success
+      tags:
+        - skip_ansible_lint

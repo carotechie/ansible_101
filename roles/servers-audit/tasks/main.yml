@@ -1,0 +1,58 @@
+---
+- name: gather california instance information
+  ec2_instance_facts:
+    filters:
+      tag:Environment: DEV
+    region: "us-west-1"
+  register: cali_boxes
+
+- name: gather oregon instance information
+  ec2_instance_facts:
+    filters:
+      tag:Environment: DEV
+    region: "us-west-2"
+  register: oregon_boxes
+
+- name: "prep report container"
+  set_fact:
+    report_emails:
+      - { email: myemail@goo.com, owner: dummy, state: off, date: "{{ ansible_date_time.date }}" , released: "no", id: "null", type: "t2.xlarge", region: "us-west-1", deathdate: '{{ ansible_date_time.date }}' }
+
+- name: "create email container"
+  set_fact:
+    emails: []
+
+- name: "initial looping to grab emails."
+  set_fact:
+    report_emails: "{{ report_emails + [dict( email=item.tags.Email|default('myteam@goo.com'), owner=item.tags.Owner|default(item.instance_id), state=item.state.name, date=item.tags.LaunchDate|default('not set'), released=item.tags.Jira|default('no'), id=item.instance_id, type=item.instance_type, region=item.placement.availability_zone|regex_replace('^(us-.*-[0-9]).*$','\\1'), deathdate=item.tags.TerminationDate| default( '%Y-%m-%d' | strftime( ( ansible_date_time.epoch | int ) + ( 86400 * 21 )  ) ) )] }}"
+    emails: "{{ emails + [ item.tags.Email|default('myemail@goo.com') ] }}"
+  loop: "{{ cali_boxes.instances + oregon_boxes.instances }}"
+  loop_control:
+    label: "{{ item.tags.Owner | default(item.instance_id) }}"
+  when: item.state.name != 'stopping' and item.state.name != 'terminated'
+
+- name: "template out each individual's report"
+  template:
+    src: inventory.j2
+    dest: "/tmp/inventory_{{ item|regex_replace('\\@','')|regex_replace('\\.','') }}.csv"
+  with_items: "{{ emails|unique }}"
+
+- name: email user their report
+  mail:
+    to: "{{ item|regex_replace('myteam@goo.com','myemail@goo.com') }}"
+    subject: "{{ mail_subject }}"
+    from: "{{ mail_from }}"
+    attach: "/tmp/inventory_{{ item|regex_replace('\\@','')|regex_replace('\\.','') }}.csv"
+    body: "{{ mail_body }}"
+    subtype: "html"
+    host: "{{ mail_host }}"
+    port: 25
+    secure: never
+  run_once: yes
+  with_items: "{{ emails|unique }}"
+
+- name: "clean up"
+  file:
+    state: "absent"
+    name: "/tmp/inventory_{{ item|regex_replace('\\@','')|regex_replace('\\.','') }}.csv"
+  with_items: "{{ emails|unique }}"

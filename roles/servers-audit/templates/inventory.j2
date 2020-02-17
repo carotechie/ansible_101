@@ -1,0 +1,10 @@
+"Instance Name","Instance Identifier","Instance Type","Instance Region","Is Instance Running?","Instance Cost (Monthly)","Is JIRA Released?","Date Scheduled for Deletion"
+{% for host in report_emails %}
+{% if host.email == item %}
+{% if host.region == 'us-west-1' %}
+"{{ host.owner }}", "{{ host.id }}", "{{ host.type }}", "{{ host.region }}", "{{ host.state }}", "{{ cali_instance_type_costs[host.type] }}", "{{ host.released }}", "{{ host.deathdate }}"
+{% else %}
+"{{ host.owner }}", "{{ host.id }}", "{{ host.type }}", "{{ host.region }}", "{{ host.state }}", "{{ oregon_instance_type_costs[host.type] }}", "{{ host.released }}", "{{ host.deathdate }}"
+{% endif %}
+{% endif %}
+{% endfor %}

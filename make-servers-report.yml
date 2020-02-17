@@ -1,0 +1,21 @@
+---
+- hosts: "localhost"
+  gather_facts: true
+  vars:
+    env: DEV
+    instance: "1"
+    initialize: yes
+    field_names:
+             - "Instance ID"
+             - "Name"
+             - "IP Address"
+             - "Owner Tag"
+             - "Email Contact"
+             - "Instance Type/Size"
+             - "Instance Cost (Monthly On-Demand)"
+             - "Last Launched on"
+             - "Terminating on"
+             - "Instance Status"
+  remote_user: ec2-user
+  roles:
+    - servers-report
