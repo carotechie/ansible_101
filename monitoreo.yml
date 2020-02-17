@@ -21,17 +21,17 @@
 
     - name: Check that SIP frontend is up
       uri:
-        url: 'https://sip-{{ owner }}.dev.pfops.com/cas/login?service=https%3a%2f%2fsip-{{ owner }}.dev.pfops.com%2f'
+        url: 'https://sip-{{ owner }}.dev.com/cas/login?service=https%3a%2f%2fsip-{{ owner }}.dev.pfops.com%2f'
         validate_certs: no
 
     - name: Check that Movil frontend is up
       uri:
-        url: 'https://movil-{{ owner }}.dev.pfops.com/#/'
+        url: 'https://movil-{{ owner }}.dev.com/#/'
         validate_certs: no
 
     - name: Check that Zeus frontend is up
       uri:
-        url: 'https://zeus-{{ owner }}.dev.pfops.com/ng/#'
+        url: 'https://zeus-{{ owner }}.dev.com/ng/#'
         validate_certs: no
 
 # Finally, confirm Jenkins is up on the box
